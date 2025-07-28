@@ -1,0 +1,34 @@
+# .NET Core
+**/bin/
+**/obj/
+**/*.user
+**/*.suo
+**/*.userosscache
+**/*.sln.docstates
+
+# Visual Studio
+**/*.user
+**/*.userosscache
+**/*.suo
+**/*.user.*
+**/TestResults/
+**/.vs/
+
+# VS Code
+**/.vscode/
+
+# Blazor
+**/wwwroot/_framework/
+**/wwwroot/_content/
+
+# NuGet
+**/*.nuget.props
+**/*.nuget.targets
+
+# Local files
+**/*.db
+**/*.sqlite
+**/*.log
+
+# Environment
+**/.env

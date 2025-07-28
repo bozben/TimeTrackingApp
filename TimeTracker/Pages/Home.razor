@@ -1,0 +1,69 @@
+﻿@page "/"
+
+<PageTitle>Time Tracker App</PageTitle>
+
+<h1>Zaman Takip</h1>
+<div class="card-body">
+	<h3>Yeni Görev Ekle</h3>
+
+	<div class="mb-3">
+		<label for="taskTitle" class="form-label">Görev Başlığı</label>
+		<input id="taskTitle" type="text" class="form-control"
+		@bind="newTask.Title" placeholder="Başlığı Girin" />
+	</div>
+
+	<div class="mb-3">
+		<label for="taskDescription" class="form-label">Açıklama</label>
+		<textarea id="taskDescription" class="form-control" rows="3"
+			   @bind="newTask.Description" placeholder="Açıklama Girin"></textarea>
+	</div>
+
+	<button class="btn btn-primary" @onclick="AddTask">╬ Görev Ekle</button>
+</div>
+
+<div class="mt-4">
+		<h3>Görevlerim</h3>
+	@if (tasks.Any())
+	{
+		<div class="row">
+			@foreach(var task in tasks)
+			{
+				<div class="col-md-6 col-lg-4 mb-3">
+					<div class="card">
+						<div class="card-body">
+							<h5 class="card-title">@task.Title</h5>
+							<p class="card-text">@task.Description</p>
+							<p class="text-muted">
+								<small>Oluşturuldu: @task.CreateDate.ToString("dd.MM.yyyy HH:mm")</small>
+							</p>
+							<p class="fw-bold">
+								Süre: @task.FormattedTime
+							</p>
+						</div>
+					</div>
+					
+				</div>
+			}
+		</div>
+	}
+</div>
+
+@code{
+	private TaskItem newTask = new();
+	private List<TaskItem> tasks = new();
+
+	private void AddTask()
+	{
+		if (string.IsNullOrWhiteSpace(newTask.Title) == false)
+		{
+			tasks.Add(new TaskItem
+				{
+					Title = newTask.Title,
+					Description = newTask.Description,
+					CreateDate = DateTime.Now
+				});
+		}
+
+		newTask = new();
+	}
+}
