@@ -4,7 +4,7 @@ namespace TimeTracker.Models
 {
     public class TaskItem
     {
-        public Guid Id { get; set; } = new Guid();
+        public Guid Id { get; set; } = Guid.NewGuid();
         public string Title { get; set; }
         public string Description { get; set; }
         public DateTime CreateDate { get; set; } = DateTime.Now;

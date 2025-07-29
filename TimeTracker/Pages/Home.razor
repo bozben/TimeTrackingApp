@@ -36,6 +36,29 @@
 							<p class="text-muted">
 								<small>Oluşturuldu: @task.CreateDate.ToString("dd.MM.yyyy HH:mm")</small>
 							</p>
+
+							<div class="mb-2">
+								@if (task.IsRunning == false)
+								{
+									<button class="btn btn-success btn-sm me-2" @onclick="@(eventArgs => StartTask(task))">
+										Başlat
+									</button>
+								}
+								else
+								{
+									<button class="btn btn-danger btn-sm me-2" @onclick="@(eventArgs => StopTask(task))">
+										Durdur
+									</button>
+								}
+							</div>
+
+							@if (task.IsCompleted)
+							{
+								<span class="badge bg-secondary">Tamamlandı</span>
+							}
+
+
+
 							<p class="fw-bold">
 								Süre: @task.FormattedTime
 							</p>
@@ -65,5 +88,19 @@
 		}
 
 		newTask = new();
+	}
+
+	private void StartTask(TaskItem task)
+	{
+		task.StartTime = DateTime.Now;
+		task.IsRunning = true;
+		task.IsCompleted = false;
+	}
+
+	private void StopTask(TaskItem task)
+	{
+		task.EndTime = DateTime.Now;
+		task.IsRunning = false;
+		task.IsCompleted = true;
 	}
 }
