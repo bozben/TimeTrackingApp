@@ -1,6 +1,61 @@
 ﻿@page "/"
 
+<!--Silme-->
+@if(deleteConfirm && taskToDelete != null)
+{
+	<div class="modal-backdrop fade show" style="background:rgba(0,0,0.5);"></div>
+	<div class="modal fade show d-block" tabindex="-1" style="display:block">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Görev Sil</h5>
+					<button type="button" class="btn-close" @onclick="CancelDelete"></button>
+				</div>
+				<div class="modal-body">
+					<p><strong>"@taskToDelete.Title"</strong> görevini silmek istiyor musun?</p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn-secondary"@onclick="CancelDelete">İptal</button>
+					<button type="button" class="btn-danger" @onclick="ExecuteDelete">Sil</button>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+<!--Düzenleme-->
+@if(showEditText && taskToEdit != null)
+{
+	<div class="modal-backdrop fade show" style="background-color: rgba(0,0,0,0.5);"></div>
+	<div class="modal fade show d-block" tabindex="-1" style="display: block;">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Görev Düzenle</h5>
+					<button type="button" class="btn-close" @onclick="CancelEdit"></button>
+				</div>
+				<div class="modal-body">
+					<div class="mb-3">
+						<label class="form-label">Başlık</label>
+						<input type="text" class="form-control" @bind="taskToEdit.Title" />
+					</div>
+					<div class="mb-3">
+						<label class="form-label">Açıklama</label>
+						<textarea class="form-control" rows="3" @bind="taskToEdit.Description"></textarea>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" @onclick="CancelEdit">İptal</button>
+					<button type="button" class="btn btn-primary" @onclick="SaveEdit">Kaydet</button>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+<!--Sayfa-->
 <PageTitle>Time Tracker App</PageTitle>
+
+
 
 <h1>Zaman Takip</h1>
 <div class="card-body">
@@ -21,12 +76,29 @@
 	<button class="btn btn-primary" @onclick="AddTask">╬ Görev Ekle</button>
 </div>
 
+<div class="mb-3">
+	<div class="btn-group" role="group">
+		<button type="button" class="btn @(filterStatus =="all" ? "btn-primary" : "btn-outline-primary")"
+			@onclick='()=>SetFilter("all")'>
+			Tüm Görevler
+		</button>
+		<button type="button" class="btn @(filterStatus == "active" ? "btn-primary" : "btn-outline-primary")"
+				@onclick='() => SetFilter("active")'>
+			Devam Eden
+		</button>
+		<button type="button" class="btn @(filterStatus == "completed" ? "btn-primary" : "btn-outline-primary")"
+				@onclick='() => SetFilter("completed")'>
+			Sona Ermiş
+		</button>
+	</div>
+</div>
+
 <div class="mt-4">
 		<h3>Görevlerim</h3>
-	@if (tasks.Any())
+	@if (FilteredTasks.Any())
 	{
 		<div class="row">
-			@foreach(var task in tasks)
+			@foreach(var task in FilteredTasks)
 			{
 				<div class="col-md-6 col-lg-4 mb-3">
 					<div class="card">
@@ -50,6 +122,14 @@
 										Durdur
 									</button>
 								}
+							</div>
+							<div class="mt-2">
+								<button class="btn btn-danger btn-sm" @onclick="()=>DeleteDialog(task)">
+									Sil
+								</button>
+								<button class="btn btn-primary btn-sm me-2" @onclick="() => ShowEditDialogue(task)">
+									Düzenle
+								</button>
 							</div>
 
 							@if (task.IsCompleted)
@@ -102,5 +182,96 @@
 		task.EndTime = DateTime.Now;
 		task.IsRunning = false;
 		task.IsCompleted = true;
+	}
+
+	/*Silme İşlemi*/
+	private TaskItem taskToDelete;
+	private bool deleteConfirm = false;
+
+	private void DeleteDialog(TaskItem task)
+	{
+		taskToDelete = task;
+		deleteConfirm = true;
+	}
+
+	private void CancelDelete()
+	{
+		taskToDelete = null;
+		deleteConfirm = false;
+	}
+
+	private void ExecuteDelete()
+	{
+		if(taskToDelete != null)
+		{
+			tasks.Remove(taskToDelete);
+			taskToDelete = null;
+			deleteConfirm = false;
+		}
+	}
+	/*Düzenleme İşlemi*/
+	private TaskItem taskToEdit;
+	private bool showEditText = false;  
+
+	private void ShowEditDialogue(TaskItem task)
+	{
+		taskToEdit = new TaskItem()
+			{
+				Id = task.Id,
+				Title = task.Title,
+				Description = task.Description,
+				CreateDate = task.CreateDate,
+				StartTime = task.StartTime,
+				EndTime = task.EndTime,
+				IsRunning = task.IsRunning,
+				IsCompleted = task.IsCompleted
+
+			};
+		showEditText = true;
+	}
+
+	private void CancelEdit()
+	{
+		taskToEdit = null;
+		showEditText = false;
+	}
+
+	private void SaveEdit()
+	{
+		if (taskToEdit != null)
+		{
+			var originalTask = tasks.FirstOrDefault(t => t.Id == taskToEdit.Id);
+			if (originalTask != null)
+			{
+				originalTask.Title = taskToEdit.Title;
+				originalTask.Description = taskToEdit.Description;
+			}
+			taskToEdit = null;
+			showEditText = false;
+		}
+	}
+
+	/*Filtreleme*/
+	private string filterStatus = "all";  
+
+	private List<TaskItem> FilteredTasks
+	{
+		get
+		{
+			switch (filterStatus)
+			{
+				case "active":
+					return tasks.Where(t => t.IsRunning == true).ToList();
+				case "completed":
+					return tasks.Where(t => t.IsCompleted == true).ToList();
+				default:
+					return tasks;
+			}
+		}
+	}
+
+	private void SetFilter(string filter)
+	{
+		filterStatus = filter;
 	}
 }
