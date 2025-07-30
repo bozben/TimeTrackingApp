@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using TimeTracker.Services;
 
 namespace TimeTracker
 {
@@ -12,6 +13,7 @@ namespace TimeTracker
             builder.RootComponents.Add<HeadOutlet>("head::after");
 
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+            builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
 
             await builder.Build().RunAsync();
         }

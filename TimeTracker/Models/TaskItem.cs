@@ -35,7 +35,7 @@ namespace TimeTracker.Models
         {
             get
             {
-                return $"{ElapsedTime.Hours}:{ElapsedTime.Minutes}:{ElapsedTime.Seconds}";
+                return $"{ElapsedTime.Hours:D2}s : {ElapsedTime.Minutes:D2}dk : {ElapsedTime.Seconds:D2}sn";
             }
         }
     }

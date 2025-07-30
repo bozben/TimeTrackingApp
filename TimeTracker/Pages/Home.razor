@@ -1,5 +1,5 @@
 ﻿@page "/"
-
+@inject ILocalStorageService localStorage
 <!--Silme-->
 @if(deleteConfirm && taskToDelete != null)
 {
@@ -151,11 +151,125 @@
 	}
 </div>
 
+<!--İstatikstikler-->
+<div class="row mb-4"v>
+	<div class="col-md-3">
+		<div class="card bg-primary text-white">
+			<div class="card-body text-center">
+				<h5 class="card-title">Toplam Görev</h5>
+				<h3 class="display-6">@TotalTaskCount</h3>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-3">
+		<div class="card bg-success text-white">
+			<div class="card-body text-center">
+				<h5 class="card-title">Aktif Görev</h5>
+				<h3 class="display-6">@ActiveTaskCount</h3>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-3">
+		<div class="card bg-warning text-white">
+			<div class="card-body text-center">
+				<h5 class="card-title">Bitmiş Görev</h5>
+				<h3 class="display-6">@CompletedTasksCount</h3>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-3">
+		<div class="card bg-info text-white">
+			<div class="card-body text-center">
+				<h5 class="card-title">Toplam Süre</h5>
+				<h3 class="display-6">@($"{TotalTime.Hours:D2}s : {TotalTime.Minutes:D2}dk")</h3>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="row mb-4">
+	<div class="col-md-6">
+		<div class="card border-success">
+			<div class="card-header bg-success text-white">
+				<h5 class="mb-0">Bugün</h5>
+			</div>
+			<div class="card-body">
+				<div class="row">
+					<div class="col-6">
+						<p class="mb-1"><strong>Görev Sayısı:</strong></p>
+						<p class="mb-1"><strong>Toplam Süre:</strong></p>
+					</div>
+					<div class="col-6 text-end">
+						<p class="mb-1">@TodayTasks.Count</p>
+						<p class="mb-1">@($"{TodayTotalTime.Hours:D2}s : {TodayTotalTime.Minutes:D2}dk : {TodayTotalTime.Seconds:D2}sn")</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-6">
+		<div class="card border-primary">
+			<div class="card-header bg-primary text-white">
+				<h5 class="mb-0">Bu Hafta</h5>
+			</div>
+			<div class="card-body">
+				<div class="row">
+					<div class="col-6">
+						<p class="mb-1"><strong>Görev Sayısı:</strong></p>
+						<p class="mb-1"><strong>Toplam Süre:</strong></p>
+					</div>
+					<div class="col-6 text-end">
+						<p class="mb-1">@ThisWeekTasks.Count</p>
+						<p class="mb-1">@($"{WeekTotalTime.Hours:D2}s : {WeekTotalTime.Minutes:D2}dk : {WeekTotalTime.Seconds:D2}sn")</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
 @code{
 	private TaskItem newTask = new();
 	private List<TaskItem> tasks = new();
 
-	private void AddTask()
+	protected override async Task OnInitializedAsync()
+	{
+		await LoadTasksFromStorage();
+	}
+
+	private async Task LoadTasksFromStorage()
+	{
+		try
+		{
+			var savedTasks = await localStorage.GetItemAsync<List<TaskItem>>("tasks");
+			if (savedTasks != null)
+			{
+				tasks = savedTasks;
+			}
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"LocalStorage yükleme hatası: {ex.Message}");
+		}
+	}
+
+	private async Task SaveTasksToStorage()
+	{
+		try
+		{
+			await localStorage.SetItemAsync("tasks", tasks);
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"LocalStorage kaydetme hatası: {ex.Message}");
+		}
+	}
+	private async Task SaveData()
+	{
+		await SaveTasksToStorage();
+	}
+
+
+	private async void AddTask()
 	{
 		if (string.IsNullOrWhiteSpace(newTask.Title) == false)
 		{
@@ -168,20 +282,23 @@
 		}
 
 		newTask = new();
+		await SaveData();
 	}
 
-	private void StartTask(TaskItem task)
+	private async void StartTask(TaskItem task)
 	{
 		task.StartTime = DateTime.Now;
 		task.IsRunning = true;
 		task.IsCompleted = false;
+		await SaveData();
 	}
 
-	private void StopTask(TaskItem task)
+	private async void StopTask(TaskItem task)
 	{
 		task.EndTime = DateTime.Now;
 		task.IsRunning = false;
 		task.IsCompleted = true;
+		await SaveData();
 	}
 
 	/*Silme İşlemi*/
@@ -200,13 +317,14 @@
 		deleteConfirm = false;
 	}
 
-	private void ExecuteDelete()
+	private async void ExecuteDelete()
 	{
 		if(taskToDelete != null)
 		{
 			tasks.Remove(taskToDelete);
 			taskToDelete = null;
 			deleteConfirm = false;
+			await SaveData();
 		}
 	}
 	/*Düzenleme İşlemi*/
@@ -236,7 +354,7 @@
 		showEditText = false;
 	}
 
-	private void SaveEdit()
+	private async void SaveEdit()
 	{
 		if (taskToEdit != null)
 		{
@@ -248,6 +366,7 @@
 			}
 			taskToEdit = null;
 			showEditText = false;
+			await SaveData();
 		}
 	}
 
@@ -274,4 +393,123 @@
 	{
 		filterStatus = filter;
 	}
+
+	private List<TaskItem> TodayTasks
+	{
+		get
+		{
+			DateTime today = DateTime.Today;
+			List<TaskItem> todayTasks = new();
+
+			foreach(var task in tasks)
+			{
+				if (task.CreateDate.Date == today)
+				{
+					todayTasks.Add(task);
+				}
+			}
+			return todayTasks;
+		}
+	}
+
+	private List<TaskItem> ThisWeekTasks
+	{
+		get
+		{
+			DateTime weekStart = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
+			DateTime weekEnd = weekStart.AddDays(7);
+
+			List<TaskItem> weekTasks = new();
+
+			foreach (var task in tasks)
+			{
+				if (task.CreateDate.Date >= weekStart &&  task.CreateDate.Date < weekEnd)
+				{
+					weekTasks.Add(task);
+				}
+			}
+			return weekTasks;
+		}
+	}
+
+	/*Toplam Süre ve Görev*/
+	private TimeSpan TotalTime
+	{
+		get
+		{
+			TimeSpan total = TimeSpan.Zero;
+			foreach(var task in tasks)
+			{
+				total += task.ElapsedTime;
+			}
+			return total;
+		}
+	}
+
+	private TimeSpan TodayTotalTime
+	{
+		get
+		{
+			TimeSpan total = TimeSpan.Zero;
+			foreach (var task in TodayTasks)
+			{
+				total += task.ElapsedTime;
+			}
+			return total;
+		}
+	}
+	private TimeSpan WeekTotalTime
+	{
+		get
+		{
+			TimeSpan total = TimeSpan.Zero;
+			foreach (var task in ThisWeekTasks)
+			{
+				total += task.ElapsedTime;
+			}
+			return total;
+		}
+	}
+
+	private int CompletedTasksCount
+	{
+		get
+		{
+			int count = 0;
+			foreach (var task in tasks)
+			{
+				if (task.IsCompleted == true)
+				{
+					count++;
+				}
+			}
+			return count;
+		}
+	}
+
+	private int ActiveTaskCount
+	{
+		get
+		{
+			int count = 0;
+			foreach (var task in tasks)
+			{
+				if (task.IsRunning == true)
+				{
+					count++;
+				}
+			}
+			return count;
+		}
+	}
+
+	private int TotalTaskCount
+	{
+		get
+		{
+			return tasks.Count;
+		}
+	}
+
+
 }
