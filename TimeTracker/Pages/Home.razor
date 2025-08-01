@@ -1,515 +1,796 @@
 ﻿@page "/"
 @inject ILocalStorageService localStorage
-<!--Silme-->
-@if(deleteConfirm && taskToDelete != null)
-{
-	<div class="modal-backdrop fade show" style="background:rgba(0,0,0.5);"></div>
-	<div class="modal fade show d-block" tabindex="-1" style="display:block">
-		<div class="modal-dialog">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title">Görev Sil</h5>
-					<button type="button" class="btn-close" @onclick="CancelDelete"></button>
-				</div>
-				<div class="modal-body">
-					<p><strong>"@taskToDelete.Title"</strong> görevini silmek istiyor musun?</p>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn-secondary"@onclick="CancelDelete">İptal</button>
-					<button type="button" class="btn-danger" @onclick="ExecuteDelete">Sil</button>
-				</div>
-			</div>
-		</div>
-	</div>
-}
-<!--Düzenleme-->
-@if(showEditText && taskToEdit != null)
-{
-	<div class="modal-backdrop fade show" style="background-color: rgba(0,0,0,0.5);"></div>
-	<div class="modal fade show d-block" tabindex="-1" style="display: block;">
-		<div class="modal-dialog">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title">Görev Düzenle</h5>
-					<button type="button" class="btn-close" @onclick="CancelEdit"></button>
-				</div>
-				<div class="modal-body">
-					<div class="mb-3">
-						<label class="form-label">Başlık</label>
-						<input type="text" class="form-control" @bind="taskToEdit.Title" />
-					</div>
-					<div class="mb-3">
-						<label class="form-label">Açıklama</label>
-						<textarea class="form-control" rows="3" @bind="taskToEdit.Description"></textarea>
-					</div>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" @onclick="CancelEdit">İptal</button>
-					<button type="button" class="btn btn-primary" @onclick="SaveEdit">Kaydet</button>
-				</div>
-			</div>
-		</div>
-	</div>
-}
 
-<!--Sayfa-->
 <PageTitle>Time Tracker App</PageTitle>
 
-
-
-<h1>Zaman Takip</h1>
-<div class="card-body">
-	<h3>Yeni Görev Ekle</h3>
-
-	<div class="mb-3">
-		<label for="taskTitle" class="form-label">Görev Başlığı</label>
-		<input id="taskTitle" type="text" class="form-control"
-		@bind="newTask.Title" placeholder="Başlığı Girin" />
-	</div>
-
-	<div class="mb-3">
-		<label for="taskDescription" class="form-label">Açıklama</label>
-		<textarea id="taskDescription" class="form-control" rows="3"
-			   @bind="newTask.Description" placeholder="Açıklama Girin"></textarea>
-	</div>
-
-	<button class="btn btn-primary" @onclick="AddTask">╬ Görev Ekle</button>
+<div class="page-header">
+    <div class="container">
+        <h1 class="text-center mb-0">⏱️ Zaman Takip Uygulaması</h1>
+    </div>
 </div>
 
-<div class="mb-3">
-	<div class="btn-group" role="group">
-		<button type="button" class="btn @(filterStatus =="all" ? "btn-primary" : "btn-outline-primary")"
-			@onclick='()=>SetFilter("all")'>
-			Tüm Görevler
-		</button>
-		<button type="button" class="btn @(filterStatus == "active" ? "btn-primary" : "btn-outline-primary")"
-				@onclick='() => SetFilter("active")'>
-			Devam Eden
-		</button>
-		<button type="button" class="btn @(filterStatus == "completed" ? "btn-primary" : "btn-outline-primary")"
-				@onclick='() => SetFilter("completed")'>
-			Sona Ermiş
-		</button>
-	</div>
+<div class="container">
+    <div class="card mb-4">
+        <div class="card-body">
+            <h3>Yeni Görev Ekle</h3>
+            <div class="mb-3">
+                <label for="taskTitle" class="form-label">Görev Başlığı</label>
+                <input id="taskTitle" type="text" class="form-control"
+                       @bind="newTask.Title" placeholder="Başlığı Girin" />
+            </div>
+            <div class="mb-3">
+                <label for="taskDescription" class="form-label">Açıklama</label>
+                <textarea id="taskDescription" class="form-control" rows="3" maxlength="250"
+                          @bind="newTask.Description" placeholder="Açıklama Girin"></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="taskCategory" class="form-label">Kategori</label>
+                <select id="taskCategory" class="form-control" @bind="newTask.Category">
+                    @foreach (var category in categories)
+                    {
+                        <option value="@category.Name">@category.Name</option>
+                    }
+                </select>
+            </div>
+
+            <button class="btn btn-primary" @onclick="AddTask">➕ Görev Ekle</button>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h3>Kategorileri Yönet</h3>
+            <div class="input-group mb-3">
+                <input type="text" class="form-control" placeholder="Yeni kategori adı" @bind="newCategoryName" />
+                <input type="color" class="form-control form-control-color" @bind="newCategoryColor" />
+                <button class="btn btn-secondary" @onclick="AddCategory">Ekle</button>
+            </div>
+
+            <ul class="list-group">
+                @foreach (var category in categories)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span style="border-left: 5px solid @category.ColorCode; padding-left: 10px;">
+                            @category.Name
+                        </span>
+                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteCategory(category)">Sil</button>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <button type="button" class="btn btn-primary w-100" @onclick='() => SetFilter("all")'>
+                <div class="card-body text-center">
+                    <h5 class="card-title">Toplam Görev</h5>
+                    <h3 class="display-6">@TotalTaskCount</h3>
+                </div>
+            </button>
+        </div>
+        <div class="col-md-3">
+            <button type="button" class="btn btn-success w-100" @onclick='() => SetFilter("active")'>
+                <div class="card-body text-center">
+                    <h5 class="card-title">Aktif Görev</h5>
+                    <h3 class="display-6">@ActiveTaskCount</h3>
+                </div>
+            </button>
+        </div>
+        <div class="col-md-3">
+            <button type="button" class="btn btn-warning w-100" @onclick='() => SetFilter("completed")'>
+                <div class="card-body text-center">
+                    <h5 class="card-title">Bitmiş Görev</h5>
+                    <h3 class="display-6">@CompletedTasksCount</h3>
+                </div>
+            </button>
+        </div>
+        <div class="col-md-3">
+            <button type="button" class="btn btn-info w-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Toplam Süre</h5>
+                    <h3 class="display-6">@($"{TotalTime.Hours:D2}s : {TotalTime.Minutes:D2}dk")</h3>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <h4>Kategorilere Göre Filtrele</h4>
+        <div class="d-flex flex-wrap gap-2">
+            <button class="btn @(string.IsNullOrEmpty(filterCategory) ? "btn-primary" : "btn-outline-primary")"
+                    @onclick="() => FilterByCategory(null)">
+                Tümü
+            </button>
+
+            @foreach (var category in categories)
+            {
+                <button class="btn @(filterCategory == category.Name ? "btn-primary" : "btn-outline-primary")"
+                        @onclick="() => FilterByCategory(category.Name)">
+                    @category.Name
+                </button>
+            }
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <h3>Görevlerim</h3>
+        @if (FilteredTasks.Any())
+        {
+            <div class="row">
+                @foreach (var task in FilteredTasks)
+                {
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        @{
+                            var taskCategory = categories.FirstOrDefault(c => c.Name == task.Category);
+                            var categoryColor = taskCategory?.ColorCode ?? "#6c757d";
+                        }
+                        <div class="card h-100" style="border-left: 5px solid @categoryColor;">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">@task.Title</h5>
+                                
+                                <span class="badge" style="background-color: @categoryColor;">@task.Category</span>
+
+                                <p class="card-text mb-2">
+                                    <span class="@(task.ShowFullDescription ? "" : "clipped-text")">
+                                        @task.Description
+                                    </span>
+                                </p>
+                                @if (!string.IsNullOrEmpty(task.Description) && task.Description.Length > 150)
+                                {
+                                    <button class="btn btn-link p-0 text-start" @onclick="() => ToggleDescription(task) ">
+                                        @if (task.ShowFullDescription)
+                                        {
+                                            <span>▲</span>
+                                        }
+                                        else
+                                        {
+                                            <span>▼</span>
+                                        }
+                                    </button>
+                                }
+
+                                <div class="mt-auto">
+                                    <p class="text-muted mb-2">
+                                        <small>Oluşturuldu: @task.CreateDate.ToString("dd.MM.yyyy HH:mm")</small>
+                                    </p>
+                                    <div class="mb-2">
+                                        @if (task.IsRunning == false && task.IsCompleted == false)
+                                        {
+                                            <button class="btn btn-success btn-sm me-2" @onclick="@(eventArgs => StartTask(task))">
+                                                Başlat
+                                            </button>
+                                        }
+                                        else if (task.IsRunning == true)
+                                        {
+                                            <button class="btn btn-warning btn-sm me-2" @onclick="@(eventArgs => PauseTask(task))">
+                                                Durdur
+                                            </button>
+                                        }
+                                        else if (task.IsRunning == false && task.IsCompleted == true)
+                                        {
+                                            <button class="btn btn-success btn-sm me-2" @onclick="@(eventArgs => StartTask(task))">
+                                                Devam Et
+                                            </button>
+                                        }
+
+                                        @if (task.IsRunning || task.IsCompleted)
+                                        {
+                                            <button class="btn btn-primary btn-sm" @onclick="() => CompleteTaskDialog(task)">
+                                                Bitir
+                                            </button>
+                                        }
+                                    </div>
+                                    <div class="mt-2">
+                                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteDialog(task)">
+                                            Sil
+                                        </button>
+                                        <button class="btn btn-primary btn-sm me-2" @onclick="() => ShowEditDialogue(task)">
+                                            Düzenle
+                                        </button>
+                                    </div>
+                                    @if (task.IsCompleted)
+                                    {
+                                        <span class="badge bg-secondary mt-2">Tamamlandı</span>
+                                    }
+                                    <p class="fw-bold mt-2 mb-0">
+                                        Süre: @task.FormattedTime
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-success h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Bugün</h5>
+                </div>
+                <div class="card-body ">
+                    <div class="row">
+                        <div class="col-6">
+                            <p class="mb-1"><strong>Görev Sayısı:</strong></p>
+                            <p class="mb-1"><strong>Toplam Süre:</strong></p>
+                            @foreach (var category in categories)
+                            {
+                                var todayCategoryTime = tasks
+                                .Where(t => t.CreateDate.Date == DateTime.Today && t.Category == category.Name)
+                                .Sum(t => t.ElapsedTime.TotalSeconds);
+
+                                if (todayCategoryTime > 0)
+                                {
+                                    <p class="mb-1 ms-3">@category.Name</p>
+                                }
+                            }
+                        </div>
+                        <div class="col-6 text-end">
+                            <p class="mb-1">@TodayTasks.Count</p>
+                            <p class="mb-1">@($"{TodayTotalTime.Hours:D2}s : {TodayTotalTime.Minutes:D2}dk : {TodayTotalTime.Seconds:D2}sn")</p>
+                            @foreach (var category in categories)
+                            {
+                                var todayCategoryTimeSpan = tasks
+                                .Where(t => t.CreateDate.Date == DateTime.Today && t.Category == category.Name)
+                                .Aggregate(TimeSpan.Zero, (current, t) => current + t.ElapsedTime);
+
+                                if (todayCategoryTimeSpan.TotalSeconds > 0)
+                                {
+                                    <p class="mb-1">@($"{todayCategoryTimeSpan.Hours:D2}s : {todayCategoryTimeSpan.Minutes:D2}dk : {todayCategoryTimeSpan.Seconds:D2}sn")</p>
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-primary h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Bu Hafta</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        @{
+                            DateTime weekStart = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
+                            DateTime weekEnd = weekStart.AddDays(7);
+                        }
+                        <div class="col-6">
+                            <p class="mb-1"><strong>Görev Sayısı:</strong></p>
+                            <p class="mb-1"><strong>Toplam Süre:</strong></p>
+                            @foreach (var category in categories)
+                            {
+                                var weekCategoryTime = tasks
+                                .Where(t => t.CreateDate.Date >= weekStart && t.CreateDate.Date < weekEnd && t.Category == category.Name)
+                                .Sum(t => t.ElapsedTime.TotalSeconds);
+
+                                if (weekCategoryTime > 0)
+                                {
+                                    <p class="mb-1 ms-3">@category.Name</p>
+                                }
+                            }
+                        </div>
+                        <div class="col-6 text-end">
+                            <p class="mb-1">@ThisWeekTasks.Count</p>
+                            <p class="mb-1">@($"{WeekTotalTime.Hours:D2}s : {WeekTotalTime.Minutes:D2}dk : {WeekTotalTime.Seconds:D2}sn")</p>
+                            @foreach (var category in categories)
+                            {
+                                var weekCategoryTimeSpan = tasks
+                                .Where(t => t.CreateDate.Date >= weekStart && t.CreateDate.Date < weekEnd && t.Category == category.Name)
+                                .Aggregate(TimeSpan.Zero, (current, t) => current + t.ElapsedTime);
+
+                                if (weekCategoryTimeSpan.TotalSeconds > 0)
+                                {
+                                    <p class="mb-1">@($"{weekCategoryTimeSpan.Hours:D2}s : {weekCategoryTimeSpan.Minutes:D2}dk : {weekCategoryTimeSpan.Seconds:D2}sn")</p>
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="mt-4">
-		<h3>Görevlerim</h3>
-	@if (FilteredTasks.Any())
-	{
-		<div class="row">
-			@foreach(var task in FilteredTasks)
-			{
-				<div class="col-md-6 col-lg-4 mb-3">
-					<div class="card">
-						<div class="card-body">
-							<h5 class="card-title">@task.Title</h5>
-							<p class="card-text">@task.Description</p>
-							<p class="text-muted">
-								<small>Oluşturuldu: @task.CreateDate.ToString("dd.MM.yyyy HH:mm")</small>
-							</p>
+<!--Silme-->
+@if (deleteConfirm && taskToDelete != null)
+{
+    <div class="modal-backdrop fade show" style="background:rgba(0,0,0,0.5);"></div>
+    <div class="modal fade show d-block" tabindex="-1" style="display:block">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Görev Sil</h5>
+                    <button type="button" class="btn-close" @onclick="CancelDelete"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>"@taskToDelete.Title"</strong> Görevini silmek istiyor musun?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelDelete">İptal</button>
+                    <button type="button" class="btn btn-danger" @onclick="ExecuteDelete">Sil</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
-							<div class="mb-2">
-								@if (task.IsRunning == false)
-								{
-									<button class="btn btn-success btn-sm me-2" @onclick="@(eventArgs => StartTask(task))">
-										Başlat
-									</button>
-								}
-								else
-								{
-									<button class="btn btn-danger btn-sm me-2" @onclick="@(eventArgs => StopTask(task))">
-										Durdur
-									</button>
-								}
-							</div>
-							<div class="mt-2">
-								<button class="btn btn-danger btn-sm" @onclick="()=>DeleteDialog(task)">
-									Sil
-								</button>
-								<button class="btn btn-primary btn-sm me-2" @onclick="() => ShowEditDialogue(task)">
-									Düzenle
-								</button>
-							</div>
+<!--Düzenleme-->
+@if (showEditText && taskToEdit != null)
+{
+    <div class="modal-backdrop fade show" style="background-color: rgba(0,0,0,0.5);"></div>
+    <div class="modal fade show d-block" tabindex="-1" style="display: block;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Görev Düzenle</h5>
+                    <button type="button" class="btn-close" @onclick="CancelEdit"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" >Başlık</label>
+                        <input type="text" class="form-control" @bind="taskToEdit.Title" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Açıklama</label>
+                        <textarea class="form-control" rows="3" maxlength="250" @bind="taskToEdit.Description"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Kategori</label>
+                        <select class="form-control" @bind="taskToEdit.Category">
+                            @foreach (var category in categories)
+                            {
+                                <option value="@category.Name">@category.Name</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelEdit">İptal</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveEdit">Kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<!--Bitirme-->
+@if (showCompleteDialog && taskToComplete != null)
+{
+    <div class="modal-backdrop fade show" style="background:rgba(0,0,0,0.5);"></div>
+    <div class="modal fade show d-block" tabindex="-1" style="display:block">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Görevi Bitir</h5>
+                    <button type="button" class="btn-close" @onclick="CancelComplete"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>"@taskToComplete.Title"</strong> adlı görevi bitirmek istediğinizden emin misiniz?</p>
+                    <p class="text-danger">Bu işlem, görevin süresini sonlandırır ve onu tamamlanmış olarak işaretler.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelComplete">İptal</button>
+                    <button type="button" class="btn btn-primary" @onclick="ExecuteComplete">Görevi Bitir</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
-							@if (task.IsCompleted)
-							{
-								<span class="badge bg-secondary">Tamamlandı</span>
-							}
+@code {
+    private TaskItem newTask = new();
+    private List<TaskItem> tasks = new();
 
+    private Timer timer;
+    private bool isTimerRunning;
 
+    private List<Category> categories = new();
+    private string newCategoryName = string.Empty;
+    private string newCategoryColor = "#007bff";
 
-							<p class="fw-bold">
-								Süre: @task.FormattedTime
-							</p>
-						</div>
-					</div>
-					
-				</div>
-			}
-		</div>
-	}
-</div>
+    private string? filterCategory;
 
-<!--İstatikstikler-->
-<div class="row mb-4"v>
-	<div class="col-md-3">
-		<div class="card bg-primary text-white">
-			<div class="card-body text-center">
-				<h5 class="card-title">Toplam Görev</h5>
-				<h3 class="display-6">@TotalTaskCount</h3>
-			</div>
-		</div>
-	</div>
-	<div class="col-md-3">
-		<div class="card bg-success text-white">
-			<div class="card-body text-center">
-				<h5 class="card-title">Aktif Görev</h5>
-				<h3 class="display-6">@ActiveTaskCount</h3>
-			</div>
-		</div>
-	</div>
-	<div class="col-md-3">
-		<div class="card bg-warning text-white">
-			<div class="card-body text-center">
-				<h5 class="card-title">Bitmiş Görev</h5>
-				<h3 class="display-6">@CompletedTasksCount</h3>
-			</div>
-		</div>
-	</div>
-	<div class="col-md-3">
-		<div class="card bg-info text-white">
-			<div class="card-body text-center">
-				<h5 class="card-title">Toplam Süre</h5>
-				<h3 class="display-6">@($"{TotalTime.Hours:D2}s : {TotalTime.Minutes:D2}dk")</h3>
-			</div>
-		</div>
-	</div>
-</div>
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTasksFromStorage();
 
-<div class="row mb-4">
-	<div class="col-md-6">
-		<div class="card border-success">
-			<div class="card-header bg-success text-white">
-				<h5 class="mb-0">Bugün</h5>
-			</div>
-			<div class="card-body">
-				<div class="row">
-					<div class="col-6">
-						<p class="mb-1"><strong>Görev Sayısı:</strong></p>
-						<p class="mb-1"><strong>Toplam Süre:</strong></p>
-					</div>
-					<div class="col-6 text-end">
-						<p class="mb-1">@TodayTasks.Count</p>
-						<p class="mb-1">@($"{TodayTotalTime.Hours:D2}s : {TodayTotalTime.Minutes:D2}dk : {TodayTotalTime.Seconds:D2}sn")</p>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-	<div class="col-md-6">
-		<div class="card border-primary">
-			<div class="card-header bg-primary text-white">
-				<h5 class="mb-0">Bu Hafta</h5>
-			</div>
-			<div class="card-body">
-				<div class="row">
-					<div class="col-6">
-						<p class="mb-1"><strong>Görev Sayısı:</strong></p>
-						<p class="mb-1"><strong>Toplam Süre:</strong></p>
-					</div>
-					<div class="col-6 text-end">
-						<p class="mb-1">@ThisWeekTasks.Count</p>
-						<p class="mb-1">@($"{WeekTotalTime.Hours:D2}s : {WeekTotalTime.Minutes:D2}dk : {WeekTotalTime.Seconds:D2}sn")</p>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-</div>
-@code{
-	private TaskItem newTask = new();
-	private List<TaskItem> tasks = new();
+        await LoadCategoriesFromStorage();
+        if (categories.Count == 0)
+        {
+            categories.Add(new Category { Name = "Genel", ColorCode = "#6c757d" });
+            categories.Add(new Category { Name = "İş", ColorCode = "#0d6efd" });
+            categories.Add(new Category { Name = "Kişisel", ColorCode = "#198754" });
+            await SaveCategoriesToStorage();
+        }
+        StartAutoTimer();
+    }
 
-	protected override async Task OnInitializedAsync()
-	{
-		await LoadTasksFromStorage();
-	}
+    private void StartAutoTimer()
+    {
+        if (isTimerRunning == false)
+        {
+            timer = new Timer(UpdateUI,null,0,1000);
+            isTimerRunning = true;
+        }
+    }
+    private void StopAutoTimer()
+    {
+        if (isTimerRunning == true)
+        {
+            timer.Dispose();
+            isTimerRunning = false;
+        }
+    }
+    private async void UpdateUI(object state)
+    {
+        await InvokeAsync(() => StateHasChanged());
+    }
+    public void Dispose()
+    {
+        timer?.Dispose();
+        isTimerRunning = false;
+    }
 
-	private async Task LoadTasksFromStorage()
-	{
-		try
-		{
-			var savedTasks = await localStorage.GetItemAsync<List<TaskItem>>("tasks");
-			if (savedTasks != null)
-			{
-				tasks = savedTasks;
-			}
-		}
-		catch (Exception ex)
-		{
-			Console.WriteLine($"LocalStorage yükleme hatası: {ex.Message}");
-		}
-	}
+    private async Task LoadTasksFromStorage()
+    {
+        try
+        {
+            var savedTasks = await localStorage.GetItemAsync<List<TaskItem>>("tasks");
+            if (savedTasks != null)
+            {
+                tasks = savedTasks;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"LocalStorage yükleme hatası: {ex.Message}");
+        }
+    }
 
-	private async Task SaveTasksToStorage()
-	{
-		try
-		{
-			await localStorage.SetItemAsync("tasks", tasks);
-		}
-		catch (Exception ex)
-		{
-			Console.WriteLine($"LocalStorage kaydetme hatası: {ex.Message}");
-		}
-	}
-	private async Task SaveData()
-	{
-		await SaveTasksToStorage();
-	}
+    private async Task SaveTasksToStorage()
+    {
+        try
+        {
+            await localStorage.SetItemAsync("tasks", tasks);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"LocalStorage kaydetme hatası: {ex.Message}");
+        }
+    }
 
+    private async Task SaveData()
+    {
+        await SaveTasksToStorage();
+    }
 
-	private async void AddTask()
-	{
-		if (string.IsNullOrWhiteSpace(newTask.Title) == false)
-		{
-			tasks.Add(new TaskItem
-				{
-					Title = newTask.Title,
-					Description = newTask.Description,
-					CreateDate = DateTime.Now
-				});
-		}
+    private async Task AddTask()
+    {
+        if (string.IsNullOrWhiteSpace(newTask.Title) == false)
+        {
+            tasks.Add(new TaskItem
+            {
+                Title = newTask.Title,
+                Description = newTask.Description,
+                CreateDate = DateTime.Now,
+                Category = newTask.Category 
+            });
 
-		newTask = new();
-		await SaveData();
-	}
-
-	private async void StartTask(TaskItem task)
-	{
-		task.StartTime = DateTime.Now;
-		task.IsRunning = true;
-		task.IsCompleted = false;
-		await SaveData();
-	}
-
-	private async void StopTask(TaskItem task)
-	{
-		task.EndTime = DateTime.Now;
-		task.IsRunning = false;
-		task.IsCompleted = true;
-		await SaveData();
-	}
-
-	/*Silme İşlemi*/
-	private TaskItem taskToDelete;
-	private bool deleteConfirm = false;
-
-	private void DeleteDialog(TaskItem task)
-	{
-		taskToDelete = task;
-		deleteConfirm = true;
-	}
-
-	private void CancelDelete()
-	{
-		taskToDelete = null;
-		deleteConfirm = false;
-	}
-
-	private async void ExecuteDelete()
-	{
-		if(taskToDelete != null)
-		{
-			tasks.Remove(taskToDelete);
-			taskToDelete = null;
-			deleteConfirm = false;
-			await SaveData();
-		}
-	}
-	/*Düzenleme İşlemi*/
-	private TaskItem taskToEdit;
-	private bool showEditText = false;  
-
-	private void ShowEditDialogue(TaskItem task)
-	{
-		taskToEdit = new TaskItem()
-			{
-				Id = task.Id,
-				Title = task.Title,
-				Description = task.Description,
-				CreateDate = task.CreateDate,
-				StartTime = task.StartTime,
-				EndTime = task.EndTime,
-				IsRunning = task.IsRunning,
-				IsCompleted = task.IsCompleted
-
-			};
-		showEditText = true;
-	}
-
-	private void CancelEdit()
-	{
-		taskToEdit = null;
-		showEditText = false;
-	}
-
-	private async void SaveEdit()
-	{
-		if (taskToEdit != null)
-		{
-			var originalTask = tasks.FirstOrDefault(t => t.Id == taskToEdit.Id);
-			if (originalTask != null)
-			{
-				originalTask.Title = taskToEdit.Title;
-				originalTask.Description = taskToEdit.Description;
-			}
-			taskToEdit = null;
-			showEditText = false;
-			await SaveData();
-		}
-	}
-
-	/*Filtreleme*/
-	private string filterStatus = "all";  
-
-	private List<TaskItem> FilteredTasks
-	{
-		get
-		{
-			switch (filterStatus)
-			{
-				case "active":
-					return tasks.Where(t => t.IsRunning == true).ToList();
-				case "completed":
-					return tasks.Where(t => t.IsCompleted == true).ToList();
-				default:
-					return tasks;
-			}
-		}
-	}
-
-	private void SetFilter(string filter)
-	{
-		filterStatus = filter;
-	}
-
-	private List<TaskItem> TodayTasks
-	{
-		get
-		{
-			DateTime today = DateTime.Today;
-			List<TaskItem> todayTasks = new();
-
-			foreach(var task in tasks)
-			{
-				if (task.CreateDate.Date == today)
-				{
-					todayTasks.Add(task);
-				}
-			}
-			return todayTasks;
-		}
-	}
-
-	private List<TaskItem> ThisWeekTasks
-	{
-		get
-		{
-			DateTime weekStart = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
-			DateTime weekEnd = weekStart.AddDays(7);
-
-			List<TaskItem> weekTasks = new();
-
-			foreach (var task in tasks)
-			{
-				if (task.CreateDate.Date >= weekStart &&  task.CreateDate.Date < weekEnd)
-				{
-					weekTasks.Add(task);
-				}
-			}
-			return weekTasks;
-		}
-	}
-
-	/*Toplam Süre ve Görev*/
-	private TimeSpan TotalTime
-	{
-		get
-		{
-			TimeSpan total = TimeSpan.Zero;
-			foreach(var task in tasks)
-			{
-				total += task.ElapsedTime;
-			}
-			return total;
-		}
-	}
-
-	private TimeSpan TodayTotalTime
-	{
-		get
-		{
-			TimeSpan total = TimeSpan.Zero;
-			foreach (var task in TodayTasks)
-			{
-				total += task.ElapsedTime;
-			}
-			return total;
-		}
-	}
-	private TimeSpan WeekTotalTime
-	{
-		get
-		{
-			TimeSpan total = TimeSpan.Zero;
-			foreach (var task in ThisWeekTasks)
-			{
-				total += task.ElapsedTime;
-			}
-			return total;
-		}
-	}
-
-	private int CompletedTasksCount
-	{
-		get
-		{
-			int count = 0;
-			foreach (var task in tasks)
-			{
-				if (task.IsCompleted == true)
-				{
-					count++;
-				}
-			}
-			return count;
-		}
-	}
-
-	private int ActiveTaskCount
-	{
-		get
-		{
-			int count = 0;
-			foreach (var task in tasks)
-			{
-				if (task.IsRunning == true)
-				{
-					count++;
-				}
-			}
-			return count;
-		}
-	}
-
-	private int TotalTaskCount
-	{
-		get
-		{
-			return tasks.Count;
-		}
-	}
+            newTask = new();
 
 
+            await SaveData();
+        }
+    }
+
+    private async Task StartTask(TaskItem task)
+    {
+        task.StartTime = DateTime.Now;
+        task.IsRunning = true;
+        task.IsCompleted = false;
+        await SaveData();
+    }
+    private async Task PauseTask(TaskItem task)
+    {
+        if (task.StartTime.HasValue)
+        {
+            task.TotalElapsedTime += (DateTime.Now - task.StartTime.Value);
+            task.StartTime = null;
+        }
+        task.IsRunning = false;
+        await SaveData();
+    }
+
+    private async Task StopTask(TaskItem task)
+    {
+        if (task.StartTime.HasValue)
+        {
+            task.TotalElapsedTime += (DateTime.Now - task.StartTime.Value);
+            task.StartTime = null;
+        }
+        task.IsRunning = false;
+        task.IsCompleted = true;
+        await SaveData();
+
+    }
+    private TaskItem taskToComplete;
+    private bool showCompleteDialog = false;
+
+    private void CompleteTaskDialog(TaskItem task)
+    {
+        taskToComplete = task;
+        showCompleteDialog = true;
+    }
+    private void CancelComplete()
+    {
+        taskToComplete = null;
+        showCompleteDialog = false;
+    }
+    private async Task ExecuteComplete()
+    {
+        if (taskToComplete != null)
+        {
+            if (taskToComplete.IsRunning)
+            {
+                await PauseTask(taskToComplete);
+            }
+
+            taskToComplete.IsCompleted = true;
+            taskToComplete.EndTime = DateTime.Now;
+            taskToComplete = null;
+            showCompleteDialog = false;
+            await SaveData();
+        }
+    }
+    private void ToggleDescription(TaskItem task)
+    {
+        task.ShowFullDescription = !task.ShowFullDescription;
+    }
+    /*Kategoriler*/
+    private async Task AddCategory()
+    {
+        if (!string.IsNullOrWhiteSpace(newCategoryName))
+        {
+            categories.Add(new Category { Name = newCategoryName, ColorCode = newCategoryColor });
+            newCategoryName = string.Empty;
+            await SaveCategoriesToStorage();
+        }
+    }
+
+    private async Task DeleteCategory(Category category)
+    {
+        categories.Remove(category);
+        await SaveCategoriesToStorage();
+        tasks.Where(t => t.Category == category.Name).ToList().ForEach(t => t.Category = "Genel");
+        await SaveData();
+    }
+
+    private async Task LoadCategoriesFromStorage()
+    {
+        var savedCategories = await localStorage.GetItemAsync<List<Category>>("categories");
+        if (savedCategories != null)
+        {
+            categories = savedCategories;
+        }
+    }
+
+    private async Task SaveCategoriesToStorage()
+    {
+        await localStorage.SetItemAsync("categories", categories);
+    }
+
+
+    /*Silme İşlemi*/
+    private TaskItem taskToDelete;
+    private bool deleteConfirm = false;
+
+    private void DeleteDialog(TaskItem task)
+    {
+        taskToDelete = task;
+        deleteConfirm = true;
+    }
+
+    private void CancelDelete()
+    {
+        taskToDelete = null;
+        deleteConfirm = false;
+    }
+
+    private async Task ExecuteDelete()
+    {
+        if (taskToDelete != null)
+        {
+            tasks.Remove(taskToDelete);
+            taskToDelete = null;
+            deleteConfirm = false;
+            await SaveData();
+        }
+    }
+
+    /*Düzenleme İşlemi*/
+    private TaskItem taskToEdit;
+    private bool showEditText = false;
+
+    private void ShowEditDialogue(TaskItem task)
+    {
+        taskToEdit = new TaskItem()
+        {
+            Id = task.Id,
+            Title = task.Title,
+            Description = task.Description,
+            Category = task.Category,
+            CreateDate = task.CreateDate,
+            StartTime = task.StartTime,
+            EndTime = task.EndTime,
+            IsRunning = task.IsRunning,
+            IsCompleted = task.IsCompleted
+        };
+        showEditText = true;
+    }
+
+    private void CancelEdit()
+    {
+        taskToEdit = null;
+        showEditText = false;
+    }
+
+    private async Task SaveEdit()
+    {
+        if (taskToEdit != null)
+        {
+            var originalTask = tasks.FirstOrDefault(t => t.Id == taskToEdit.Id);
+            if (originalTask != null)
+            {
+                originalTask.Title = taskToEdit.Title;
+                originalTask.Description = taskToEdit.Description;
+                originalTask.Category = taskToEdit.Category;
+            }
+            taskToEdit = null;
+            showEditText = false;
+            await SaveData();
+            StateHasChanged(); 
+        }
+    }
+
+    /*Filtreleme*/
+    private string filterStatus = "all";
+
+    private List<TaskItem> FilteredTasks
+    {
+        get
+        {
+            var filteredList = tasks.AsEnumerable();
+
+            switch (filterStatus)
+            {
+                case "active":
+                    filteredList = filteredList.Where(t => t.IsRunning);
+                    break;
+                case "completed":
+                    filteredList = filteredList.Where(t => t.IsCompleted);
+                    break;
+            }
+
+            if (!string.IsNullOrEmpty(filterCategory))
+            {
+                filteredList = filteredList.Where(t => t.Category == filterCategory);
+            }
+
+            return filteredList.ToList();
+        }
+    }
+    private void FilterByCategory(string? categoryName)
+    {
+        filterCategory = categoryName;
+    }
+
+
+    private void SetFilter(string filter)
+    {
+        filterStatus = filter;
+    }
+
+    private List<TaskItem> TodayTasks
+    {
+        get
+        {
+            DateTime today = DateTime.Today;
+            List<TaskItem> todayTasks = new();
+            foreach (var task in tasks)
+            {
+                if (task.CreateDate.Date == today)
+                {
+                    todayTasks.Add(task);
+                }
+            }
+            return todayTasks;
+        }
+    }
+
+    private List<TaskItem> ThisWeekTasks
+    {
+        get
+        {
+            DateTime weekStart = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
+            DateTime weekEnd = weekStart.AddDays(7);
+            List<TaskItem> weekTasks = new();
+            foreach (var task in tasks)
+            {
+                if (task.CreateDate.Date >= weekStart && task.CreateDate.Date < weekEnd)
+                {
+                    weekTasks.Add(task);
+                }
+            }
+            return weekTasks;
+        }
+    }
+
+    /*Toplam Süre ve Görev*/
+    private TimeSpan TotalTime
+    {
+        get
+        {
+            TimeSpan total = TimeSpan.Zero;
+            foreach (var task in FilteredTasks)
+            {
+                total += task.ElapsedTime;
+            }
+            return total;
+        }
+    }
+
+    private TimeSpan TodayTotalTime
+    {
+        get
+        {
+            TimeSpan total = TimeSpan.Zero;
+            foreach (var task in FilteredTasks.Where(t => t.CreateDate.Date == DateTime.Today))
+            {
+                total += task.ElapsedTime;
+            }
+            return total;
+        }
+    }
+
+    private TimeSpan WeekTotalTime
+    {
+        get
+        {
+            TimeSpan total = TimeSpan.Zero;
+            DateTime weekStart = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
+            DateTime weekEnd = weekStart.AddDays(7);
+            foreach (var task in FilteredTasks.Where(t => t.CreateDate.Date >= weekStart && t.CreateDate.Date < weekEnd))
+            {
+                total += task.ElapsedTime;
+            }
+            return total;
+        }
+    }
+
+    private int CompletedTasksCount
+    {
+        get
+        {
+            return FilteredTasks.Count(t => t.IsCompleted == true);
+        }
+    }
+
+    private int ActiveTaskCount
+    {
+        get
+        {
+            return FilteredTasks.Count(t => t.IsRunning == true);
+        }
+    }
+
+    private int TotalTaskCount
+    {
+        get
+        {
+            return FilteredTasks.Count;
+        }
+    }
 }

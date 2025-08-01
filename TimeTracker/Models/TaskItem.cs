@@ -6,31 +6,30 @@ namespace TimeTracker.Models
     {
         public Guid Id { get; set; } = Guid.NewGuid();
         public string Title { get; set; }
-        public string Description { get; set; }
+        public string Description { get; set; } = string.Empty;
         public DateTime CreateDate { get; set; } = DateTime.Now;
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }
         public bool IsRunning { get; set; } = false;
         public bool IsCompleted { get; set; }= false;
+        public bool ShowFullDescription { get; set; } = false;
 
+        public TimeSpan TotalElapsedTime { get; set; } = TimeSpan.Zero;
         public TimeSpan ElapsedTime
         {
             get
             {
-                if (StartTime == null)
+                if (IsRunning && StartTime.HasValue)
                 {
-                    return TimeSpan.Zero;
+                    return TotalElapsedTime + (DateTime.Now - StartTime.Value);
                 }
-                if (IsRunning)
+                else
                 {
-                    return DateTime.Now - StartTime.Value;
-                }else if(EndTime!=null){
-                    return EndTime.Value - StartTime.Value;
+                    return TotalElapsedTime;
                 }
-                return TimeSpan.Zero;
             }
         }
-
+        public string Category { get; set; } = "Genel";
         public string FormattedTime
         {
             get

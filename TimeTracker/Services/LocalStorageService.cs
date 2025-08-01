@@ -39,6 +39,5 @@ namespace TimeTracker.Services
             var json = JsonSerializer.Serialize(Value);
             await _jSRuntime.InvokeVoidAsync("localStorage.setItem", key, json);
         }
-        List
     }
 }
