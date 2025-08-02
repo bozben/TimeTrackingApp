@@ -734,7 +734,7 @@
         get
         {
             TimeSpan total = TimeSpan.Zero;
-            foreach (var task in FilteredTasks)
+            foreach (var task in tasks)
             {
                 total += task.ElapsedTime;
             }
@@ -774,7 +774,7 @@
     {
         get
         {
-            return FilteredTasks.Count(t => t.IsCompleted == true);
+            return tasks.Count(t => t.IsCompleted);
         }
     }
 
@@ -782,7 +782,7 @@
     {
         get
         {
-            return FilteredTasks.Count(t => t.IsRunning == true);
+            return tasks.Count(t => t.IsRunning);
         }
     }
 
@@ -790,7 +790,7 @@
     {
         get
         {
-            return FilteredTasks.Count;
+            return tasks.Count;
         }
     }
 }
