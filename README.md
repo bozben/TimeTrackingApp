@@ -1,7 +1,9 @@
 # ⏱️ Zaman Takip Uygulaması
 
 ![.NET](https://img.shields.io/badge/.NET-Blazor-blue)
+
 ![C#](https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=c-sharp&logoColor=white)
+
 ![Dark Mode](https://img.shields.io/badge/Dark_Mode-Modern-purple)
 
 Kullanıcıların görevlerini takip edebileceği, süresini ölçebileceği, kategorilere ayırabileceği basit ama güçlü bir **Blazor WebAssembly** uygulaması. 
